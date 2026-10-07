@@ -359,7 +359,7 @@
         $('#msg-title').text(opt.title || '');
         $('#msg-text').html(opt.html || Util.esc(opt.text || ''));
         const $actions = $('#msg-actions').empty();
-        (opt.actions || []).forEach(a => {
+        (opt.actions || []).map(a => {
           const cls = a.style === 'line'
             ? 'bg-[#06C755] text-white'
             : a.style === 'ghost' ? 'border border-line text-ink bg-white' : 'bg-primary text-white';
@@ -444,8 +444,12 @@
         this.staffId = staffId;
         UI.loading(true, 'กำลังโหลดข้อมูลพนักงาน...');
         try {
-          this.isFriend = await getFriendFlag();
-          const d = this.data = await Api.call('init', { staffId, isFriend: this.isFriend });
+          const [friendFlag, d] = await Promise.all([
+            getFriendFlag(),
+            Api.call('init', { staffId })
+          ]);
+          this.isFriend = friendFlag;
+          this.data = d;
           document.title = d.event.eventName;
 
           if (d.event.eventStatus === 'not_started') {
@@ -560,21 +564,25 @@
       staff: [],
       charts: {},
       tab: 'dashboard',
+      dashboardData: null,
+      configData: null,
 
       async start() {
         UI.loading(true, 'กำลังตรวจสอบสิทธิ์...');
         try {
-          this.me = await Api.call('admin.me');
-          if (!this.me.isAdmin) {
-            $('#gate-name').text(this.me.profile.name || 'LINE');
-            return UI.show('view-gate');
-          }
+          const d = await Api.call('admin.dashboard');
+          this.me = { isAdmin: true, profile: d.profile || {} };
           $('#admin-name').text(this.me.profile.name || '');
           $('#admin-avatar').attr('src', this.me.profile.picture || '');
           $('#admin-link').val(Util.adminUrl());
           UI.show('view-admin');
-          await this.switchTab('dashboard');
+          this.renderDashboard(d);
         } catch (err) {
+          if (err.code === 'forbidden') {
+            const prof = (liff.isLoggedIn() && liff.getDecodedIDToken()) || {};
+            $('#gate-name').text(prof.name || 'LINE');
+            return UI.show('view-gate');
+          }
           UI.message({ icon: 'shield-alert', tone: 'danger', title: 'เข้าหน้าแอดมินไม่สำเร็จ', text: err.message,
             actions: [{ label: 'ลองใหม่', icon: 'refresh-cw', onClick: () => location.reload() }] });
         } finally {
@@ -603,9 +611,9 @@
         $('.tab-btn').removeClass('active').filter(`[data-tab="${tab}"]`).addClass('active');
         $('.tab-panel').addClass('hidden');
         $(`#tab-${tab}`).removeClass('hidden');
-        if (tab === 'dashboard') return this.loadDashboard();
-        if (tab === 'staff') return this.loadStaff();
-        if (tab === 'settings') return this.loadSettings();
+        if (tab === 'dashboard') return this.dashboardData ? this.renderDashboard(this.dashboardData) : this.loadDashboard();
+        if (tab === 'staff') return this.staff && this.staff.length ? this.renderStaff() : this.loadStaff();
+        if (tab === 'settings') return this.configData ? this.renderSettings(this.configData) : this.loadSettings();
       },
 
       /* ---------- Dashboard ---------- */
@@ -622,6 +630,7 @@
       },
 
       renderDashboard(d) {
+        this.dashboardData = d;
         const ev = d.event;
         $('#admin-event-name').text(ev.eventName);
         const statusText = { open: 'เปิดโหวตอยู่', not_started: 'ยังไม่เริ่ม', ended: 'สิ้นสุดแล้ว' }[ev.eventStatus];
@@ -776,6 +785,7 @@
         UI.loading(true, 'กำลังบันทึก...');
         try {
           const saved = await Api.call('admin.staff.save', { staff: value });
+          this.dashboardData = null;
           await this.loadStaff();
           UI.loading(false);
           if (!s) {
@@ -804,6 +814,7 @@
         UI.loading(true, 'กำลังบันทึก...');
         try {
           await Api.call('admin.staff.toggle', { staffId });
+          this.dashboardData = null;
           await this.loadStaff();
           UI.toast('อัปเดตแล้ว');
         } catch (err) {
@@ -905,20 +916,25 @@
         UI.loading(true, 'กำลังโหลดการตั้งค่า...');
         try {
           const cfg = await Api.call('admin.config.get');
-          const f = document.getElementById('settings-form');
-          const v = cfg.values;
-          f.EVENT_NAME.value = v.EVENT_NAME || '';
-          f.VOTE_MODE.value = v.VOTE_MODE === 'once' ? 'once' : 'daily';
-          f.EVENT_START.value = Util.toInputDate(v.EVENT_START);
-          f.EVENT_END.value = Util.toInputDate(v.EVENT_END);
-          f.MIN_VOTES_TO_RANK.value = v.MIN_VOTES_TO_RANK || '0';
-          f.OA_BASIC_ID.value = v.OA_BASIC_ID || '';
-          $('#invite-code').val(cfg.inviteCode || '');
+          this.renderSettings(cfg);
         } catch (err) {
           UI.error(err);
         } finally {
           UI.loading(false);
         }
+      },
+
+      renderSettings(cfg) {
+        this.configData = cfg;
+        const f = document.getElementById('settings-form');
+        const v = (cfg && cfg.values) || {};
+        f.EVENT_NAME.value = v.EVENT_NAME || '';
+        f.VOTE_MODE.value = v.VOTE_MODE === 'once' ? 'once' : 'daily';
+        f.EVENT_START.value = Util.toInputDate(v.EVENT_START);
+        f.EVENT_END.value = Util.toInputDate(v.EVENT_END);
+        f.MIN_VOTES_TO_RANK.value = v.MIN_VOTES_TO_RANK || '0';
+        f.OA_BASIC_ID.value = v.OA_BASIC_ID || '';
+        $('#invite-code').val((cfg && cfg.inviteCode) || '');
       },
 
       async saveSettings() {
@@ -938,7 +954,7 @@
         UI.loading(true, 'กำลังบันทึก...');
         try {
           const cfg = await Api.call('admin.config.save', { config });
-          f.OA_BASIC_ID.value = cfg.values.OA_BASIC_ID || '';
+          this.renderSettings(cfg);
           $('#admin-event-name').text(cfg.values.EVENT_NAME);
           UI.toast('บันทึกการตั้งค่าแล้ว');
         } catch (err) {
@@ -957,7 +973,7 @@
       .on('click', '#btn-gate', () => Admin.claim())
       .on('keydown', '#gate-code', e => { if (e.key === 'Enter') Admin.claim(); })
       .on('click', '.tab-btn', function () { Admin.switchTab($(this).data('tab')); })
-      .on('click', '[data-action="refresh-dashboard"]', () => Admin.loadDashboard())
+      .on('click', '[data-action="refresh-dashboard"]', () => { Admin.dashboardData = null; Admin.loadDashboard(); })
       .on('click', '[data-action="add-staff"]', () => Admin.editStaff(null))
       .on('click', '[data-action="edit-staff"]', function () { Admin.editStaff(String($(this).data('id'))); })
       .on('click', '[data-action="toggle-staff"]', function () { Admin.toggleStaff(String($(this).data('id'))); })

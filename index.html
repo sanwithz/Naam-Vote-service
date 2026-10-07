@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>โหวตพนักงานบริการประทับใจ</title>
+
+  <!-- Sarabun Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <!-- Loading Overlay -->
+  <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <!-- ApexCharts -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QR Code generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- LINE LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0047AB', 'primary-dark': '#003080', 'primary-light': '#1a6dd4',
+            accent: '#5B9BD5', bg: '#F4F7FB', surface: '#FFFFFF', navy: '#0A1F44',
+            ink: '#1E2A3A', muted: '#6B7A99', line: '#D0DCF0',
+            success: '#0D9488', warning: '#D97706', danger: '#DC2626', pale: '#A8C4E8',
+          },
+          fontFamily: { sans: ['Sarabun', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    :root {
+      --color-primary: #0047AB; --color-primary-dark: #003080; --color-primary-light: #1a6dd4;
+      --color-accent: #5B9BD5; --color-bg: #F4F7FB; --color-surface: #FFFFFF; --color-sidebar: #0A1F44;
+      --color-text: #1E2A3A; --color-text-muted: #6B7A99; --color-border: #D0DCF0;
+      --color-success: #0D9488; --color-warning: #D97706; --color-danger: #DC2626;
+    }
+    body { font-family: 'Sarabun', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--color-bg); color: var(--color-text); -webkit-tap-highlight-color: transparent; }
+    .star-btn svg { width: 44px; height: 44px; color: var(--color-border); fill: transparent; transition: transform .12s, color .12s, fill .12s; }
+    .star-btn.on svg { color: var(--color-warning); fill: var(--color-warning); }
+    .star-btn:active svg { transform: scale(.88); }
+    .tab-btn.active { color: #fff; border-color: var(--color-accent); }
+    .field { width: 100%; border: 1px solid var(--color-border); border-radius: .75rem; padding: .65rem .85rem; background: #fff; outline: none; font-size: 16px; }
+    .field:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(0,71,171,.12); }
+    .swal2-popup { font-family: 'Sarabun', sans-serif !important; border-radius: 1rem !important; }
+    .swal2-html-container { text-align: left !important; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- ============ LOADING (initial) ============ -->
+  <section id="view-loading" class="view min-h-screen flex flex-col items-center justify-center gap-3 text-muted">
+    <div class="w-10 h-10 border-4 border-line border-t-primary rounded-full animate-spin"></div>
+    <p>กำลังเปิดระบบ...</p>
+  </section>
+
+  <!-- ============ GENERIC MESSAGE ============ -->
+  <section id="view-message" class="view hidden min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl border border-line shadow-sm p-8 max-w-sm w-full text-center">
+      <div id="msg-icon" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center"></div>
+      <h2 id="msg-title" class="text-xl font-bold mt-4"></h2>
+      <p id="msg-text" class="text-muted mt-2 leading-relaxed"></p>
+      <div id="msg-actions" class="mt-6 space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- ============ VOTE PAGE ============ -->
+  <section id="view-vote" class="view hidden min-h-screen flex flex-col">
+    <header class="bg-navy text-white px-5 pt-7 pb-20 text-center">
+      <p class="text-pale text-sm flex items-center justify-center gap-1"><i data-lucide="award" class="w-4 h-4"></i> ให้คะแนนการบริการ</p>
+      <h1 id="vote-event-name" class="text-xl font-bold mt-1 leading-snug"></h1>
+    </header>
+
+    <main class="flex-1 w-full max-w-md mx-auto px-4 -mt-14 pb-10">
+      <div class="bg-white rounded-2xl border border-line shadow-sm px-6 pb-6 text-center">
+        <div id="vote-staff-avatar" class="flex justify-center -mt-12"></div>
+        <h2 id="vote-staff-name" class="text-2xl font-bold mt-3"></h2>
+        <p id="vote-staff-meta" class="text-muted"></p>
+
+        <p class="mt-6 font-semibold">วันนี้พนักงานบริการคุณเป็นอย่างไร?</p>
+        <div id="star-group" class="flex justify-center gap-1 mt-3"></div>
+        <p id="star-label" class="h-6 mt-2 text-warning font-semibold"></p>
+
+        <div class="mt-4 text-left">
+          <label for="vote-comment" class="text-sm font-semibold">คำชม / ข้อเสนอแนะ <span class="text-muted font-normal">(ไม่บังคับ)</span></label>
+          <textarea id="vote-comment" maxlength="300" rows="3" class="field mt-1 resize-none" placeholder="เช่น บริการดี ยิ้มแย้ม แนะนำสินค้าได้ตรงใจ"></textarea>
+          <div class="text-right text-xs text-muted"><span id="comment-count">0</span>/300</div>
+        </div>
+
+        <label class="flex items-start gap-2 text-left text-sm mt-3 cursor-pointer">
+          <input type="checkbox" id="vote-consent" class="mt-1 w-4 h-4 accent-[#0047AB]" />
+          <span class="text-muted">ยินยอมรับข่าวสาร โปรโมชัน และสิทธิพิเศษจากร้านผ่าน LINE (ไม่บังคับ)</span>
+        </label>
+
+        <button id="btn-submit-vote" disabled
+          class="mt-6 w-full h-12 rounded-xl bg-primary text-white font-bold text-lg flex items-center justify-center gap-2 disabled:bg-line disabled:text-muted transition">
+          <i data-lucide="send" class="w-5 h-5"></i> ส่งคะแนน
+        </button>
+        <p id="vote-rule" class="text-xs text-muted mt-3"></p>
+      </div>
+      <p class="text-center text-xs text-muted mt-4">โหวตในนาม <span id="vote-profile-name" class="font-semibold"></span></p>
+    </main>
+  </section>
+
+  <!-- ============ ADMIN GATE (invite code) ============ -->
+  <section id="view-gate" class="view hidden min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl border border-line shadow-sm p-8 max-w-sm w-full text-center">
+      <div class="w-16 h-16 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center"><i data-lucide="shield-check" class="w-8 h-8"></i></div>
+      <h2 class="text-xl font-bold mt-4">ลงทะเบียนแอดมิน</h2>
+      <p class="text-muted mt-1 text-sm">บัญชี <span id="gate-name" class="font-semibold text-ink"></span> ยังไม่มีสิทธิ์แอดมิน<br>กรอกรหัสเชิญจากชีต Config</p>
+      <input id="gate-code" class="field mt-5 text-center tracking-[.3em] uppercase font-bold" maxlength="12" placeholder="รหัสเชิญ" autocomplete="off" />
+      <button id="btn-gate" class="mt-4 w-full h-11 rounded-xl bg-primary text-white font-bold">ยืนยัน</button>
+    </div>
+  </section>
+
+  <!-- ============ ADMIN PANEL ============ -->
+  <section id="view-admin" class="view hidden min-h-screen">
+    <nav class="bg-navy text-white sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          <i data-lucide="award" class="w-5 h-5 text-accent shrink-0"></i>
+          <span class="font-bold truncate" id="admin-event-name">ระบบโหวตพนักงาน</span>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-pale shrink-0">
+          <span id="admin-name" class="hidden sm:inline"></span>
+          <img id="admin-avatar" class="w-8 h-8 rounded-full bg-pale object-cover" alt="" />
+        </div>
+      </div>
+      <div class="max-w-6xl mx-auto px-2 flex gap-1 overflow-x-auto no-scrollbar">
+        <button class="tab-btn active px-4 py-2.5 border-b-2 border-transparent text-pale flex items-center gap-1.5 whitespace-nowrap" data-tab="dashboard"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> แดชบอร์ด</button>
+        <button class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-pale flex items-center gap-1.5 whitespace-nowrap" data-tab="staff"><i data-lucide="users" class="w-4 h-4"></i> พนักงาน</button>
+        <button class="tab-btn px-4 py-2.5 border-b-2 border-transparent text-pale flex items-center gap-1.5 whitespace-nowrap" data-tab="settings"><i data-lucide="settings" class="w-4 h-4"></i> ตั้งค่า</button>
+      </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-4 pb-12">
+      <!-- Dashboard -->
+      <div id="tab-dashboard" class="tab-panel space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold">ภาพรวมกิจกรรม</h2>
+            <p id="dash-status" class="text-sm text-muted"></p>
+          </div>
+          <button data-action="refresh-dashboard" class="h-10 px-4 rounded-xl border border-line bg-white flex items-center gap-2 text-sm font-semibold"><i data-lucide="refresh-cw" class="w-4 h-4"></i> รีเฟรช</button>
+        </div>
+        <div id="dash-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+        <div class="grid lg:grid-cols-5 gap-4">
+          <div class="lg:col-span-3 bg-white rounded-2xl border border-line p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-warning"></i> อันดับพนักงาน</h3>
+              <span id="dash-min-votes" class="text-xs text-muted"></span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead><tr class="text-muted border-b border-line text-left">
+                  <th class="py-2 pr-2 w-12">อันดับ</th><th class="py-2 pr-2">พนักงาน</th>
+                  <th class="py-2 pr-2 text-right">โหวต</th><th class="py-2 pr-2 text-right">วันนี้</th><th class="py-2 text-right">ดาวเฉลี่ย</th>
+                </tr></thead>
+                <tbody id="dash-leaderboard"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-line p-4">
+            <h3 class="font-bold mb-2">Top 10 จำนวนโหวต</h3>
+            <div id="chart-top"></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-line p-4">
+          <h3 class="font-bold mb-2">จำนวนโหวตรายวัน (30 วันล่าสุด)</h3>
+          <div id="chart-daily"></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-line p-4">
+          <h3 class="font-bold mb-3 flex items-center gap-2"><i data-lucide="message-square-heart" class="w-5 h-5 text-primary"></i> ความคิดเห็นล่าสุด</h3>
+          <div id="dash-recent" class="divide-y divide-line"></div>
+        </div>
+      </div>
+
+      <!-- Staff -->
+      <div id="tab-staff" class="tab-panel hidden space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div class="relative flex-1 sm:max-w-sm">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+            <input id="staff-search" class="field pl-9" placeholder="ค้นหาชื่อ ชื่อเล่น ตำแหน่ง หรือรหัส" />
+          </div>
+          <div class="flex gap-2">
+            <select id="staff-filter" class="field w-auto">
+              <option value="all">ทั้งหมด</option>
+              <option value="active">เข้าร่วม</option>
+              <option value="inactive">ปิดแล้ว</option>
+            </select>
+            <button data-action="add-staff" class="h-11 px-4 rounded-xl bg-primary text-white font-semibold flex items-center gap-2 whitespace-nowrap"><i data-lucide="user-plus" class="w-4 h-4"></i> เพิ่มพนักงาน</button>
+          </div>
+        </div>
+        <p id="staff-count" class="text-sm text-muted"></p>
+        <div id="staff-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+
+      <!-- Settings -->
+      <div id="tab-settings" class="tab-panel hidden">
+        <form id="settings-form" class="bg-white rounded-2xl border border-line p-5 space-y-4 max-w-2xl">
+          <h2 class="text-lg font-bold">ตั้งค่ากิจกรรม</h2>
+          <div>
+            <label class="text-sm font-semibold">ชื่อกิจกรรม *</label>
+            <input name="EVENT_NAME" class="field mt-1" maxlength="120" required />
+          </div>
+          <div>
+            <label class="text-sm font-semibold">สิทธิ์การโหวต</label>
+            <select name="VOTE_MODE" class="field mt-1">
+              <option value="daily">1 บัญชี LINE โหวตได้วันละ 1 ครั้ง</option>
+              <option value="once">1 บัญชี LINE โหวตได้ 1 ครั้งตลอดกิจกรรม</option>
+            </select>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold">เริ่มกิจกรรม <span class="text-muted font-normal">(ว่าง = เปิดทันที)</span></label>
+              <input type="datetime-local" name="EVENT_START" class="field mt-1" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold">สิ้นสุดกิจกรรม <span class="text-muted font-normal">(ว่าง = ไม่กำหนด)</span></label>
+              <input type="datetime-local" name="EVENT_END" class="field mt-1" />
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold">โหวตขั้นต่ำก่อนติดอันดับ</label>
+              <input type="number" min="0" name="MIN_VOTES_TO_RANK" class="field mt-1" />
+            </div>
+            <div>
+              <label class="text-sm font-semibold">LINE OA Basic ID</label>
+              <input name="OA_BASIC_ID" class="field mt-1" placeholder="@abc1234" />
+            </div>
+          </div>
+          <button type="submit" class="h-11 px-6 rounded-xl bg-primary text-white font-semibold flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> บันทึกการตั้งค่า</button>
+        </form>
+
+        <div class="bg-white rounded-2xl border border-line p-5 space-y-3 max-w-2xl mt-4">
+          <h2 class="text-lg font-bold">ลิงก์และสิทธิ์แอดมิน</h2>
+          <div>
+            <p class="text-sm font-semibold">ลิงก์หน้าแอดมิน</p>
+            <div class="flex gap-2 mt-1">
+              <input id="admin-link" class="field text-sm" readonly />
+              <button data-action="copy" data-target="#admin-link" class="h-11 px-3 rounded-xl border border-line" title="คัดลอก"><i data-lucide="copy" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-semibold">รหัสเชิญแอดมิน <span class="text-muted font-normal">(ส่งให้คนที่ต้องการเพิ่มเป็นแอดมิน)</span></p>
+            <div class="flex gap-2 mt-1">
+              <input id="invite-code" class="field font-bold tracking-widest" readonly />
+              <button data-action="copy" data-target="#invite-code" class="h-11 px-3 rounded-xl border border-line" title="คัดลอก"><i data-lucide="copy" class="w-4 h-4"></i></button>
+            </div>
+            <p class="text-xs text-muted mt-1">เปลี่ยนรหัสได้จากเมนู 🗳️ ระบบโหวต ใน Google Sheet</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    /* =====================================================
+     *  CONFIG — แก้ 2 ค่านี้ก่อน deploy
+     * ===================================================== */
+    const CONFIG = {
+      LIFF_ID: '2005631248-yIKA7a6V',
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbzFq5Al0xGPpWosGHeo8y1D8iOpr21Vwpy5YbPJnFBjoeckbQuYMRYE2-utsRKWhKNd/exec',
+    };
+
+    const RATING_LABELS = ['', 'ต้องปรับปรุง', 'พอใช้', 'ดี', 'ดีมาก', 'ประทับใจที่สุด'];
+    const COLORS = { primary: '#0047AB', accent: '#5B9BD5', warning: '#D97706', success: '#0D9488', navy: '#0A1F44', muted: '#6B7A99', line: '#D0DCF0' };
+
+    /* ===================== UTIL ===================== */
+    const Util = {
+      esc(s) {
+        return String(s === null || s === undefined ? '' : s)
+          .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      },
+      initial(name) {
+        return (String(name || '?').trim().charAt(0) || '?').toUpperCase();
+      },
+      avatar(url, name, size) {
+        const cls = size || 'w-12 h-12 text-lg';
+        const img = url ? `<img src="${Util.esc(url)}" alt="" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">` : '';
+        return `<div class="relative ${cls} rounded-full bg-primary text-white font-bold flex items-center justify-center overflow-hidden shrink-0">${Util.esc(Util.initial(name))}${img}</div>`;
+      },
+      voteUrl(staffId) {
+        return `https://liff.line.me/${CONFIG.LIFF_ID}?staff=${encodeURIComponent(staffId)}`;
+      },
+      adminUrl() {
+        return `https://liff.line.me/${CONFIG.LIFF_ID}?page=admin`;
+      },
+      num(n) {
+        return Number(n || 0).toLocaleString('th-TH');
+      },
+      toInputDate(s) {
+        if (!s) return '';
+        const v = String(s).trim().replace(' ', 'T');
+        return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v + 'T00:00' : v.slice(0, 16);
+      },
+      thaiDate(s) {
+        if (!s) return '';
+        const d = new Date(String(s).replace(' ', 'T') + (String(s).length <= 10 ? 'T00:00' : '') + '+07:00');
+        return isNaN(d) ? s : d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: String(s).length > 10 ? 'short' : undefined, timeZone: 'Asia/Bangkok' });
+      },
+      stars(n) {
+        const r = Math.round(Number(n) || 0);
+        return '★'.repeat(r) + '☆'.repeat(Math.max(0, 5 - r));
+      },
+      async copy(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          UI.toast('คัดลอกแล้ว');
+        } catch (e) {
+          Swal.fire({ title: 'คัดลอกลิงก์', input: 'text', inputValue: text, confirmButtonText: 'ปิด', confirmButtonColor: COLORS.primary });
+        }
+      },
+      icons() {
+        if (window.lucide) lucide.createIcons();
+      },
+    };
+
+    /* ===================== UI ===================== */
+    const UI = {
+      show(id) {
+        $('.view').addClass('hidden');
+        $('#' + id).removeClass('hidden');
+        window.scrollTo(0, 0);
+        Util.icons();
+      },
+      loading(on, text) {
+        if (on) {
+          $.LoadingOverlay('show', {
+            text: text || 'กำลังโหลด...', textResizeFactor: 0.14, textColor: COLORS.primary,
+            imageColor: COLORS.primary, background: 'rgba(244,247,251,.88)', zIndex: 3000,
+          });
+        } else {
+          $.LoadingOverlay('hide', true);
+        }
+      },
+      message(opt) {
+        const tones = { primary: 'bg-primary/10 text-primary', success: 'bg-success/10 text-success', warning: 'bg-warning/10 text-warning', danger: 'bg-danger/10 text-danger' };
+        $('#msg-icon').attr('class', `w-16 h-16 rounded-full mx-auto flex items-center justify-center ${tones[opt.tone || 'primary']}`)
+          .html(`<i data-lucide="${opt.icon || 'info'}" class="w-8 h-8"></i>`);
+        $('#msg-title').text(opt.title || '');
+        $('#msg-text').html(opt.html || Util.esc(opt.text || ''));
+        const $actions = $('#msg-actions').empty();
+        (opt.actions || []).forEach(a => {
+          const cls = a.style === 'line'
+            ? 'bg-[#06C755] text-white'
+            : a.style === 'ghost' ? 'border border-line text-ink bg-white' : 'bg-primary text-white';
+          $('<button>')
+            .attr('class', `w-full h-11 rounded-xl font-semibold flex items-center justify-center gap-2 ${cls}`)
+            .html(`${a.icon ? `<i data-lucide="${a.icon}" class="w-4 h-4"></i>` : ''}${Util.esc(a.label)}`)
+            .on('click', a.onClick)
+            .appendTo($actions);
+        });
+        UI.show('view-message');
+      },
+      error(err, title) {
+        return Swal.fire({
+          icon: 'error', title: title || 'เกิดข้อผิดพลาด',
+          text: (err && err.message) || 'กรุณาลองใหม่อีกครั้ง',
+          confirmButtonText: 'ตกลง', confirmButtonColor: COLORS.primary,
+        });
+      },
+      toast(title, icon) {
+        Swal.fire({ toast: true, position: 'top', timer: 1800, showConfirmButton: false, icon: icon || 'success', title });
+      },
+      confetti() {
+        if (!window.confetti) return;
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: [COLORS.primary, COLORS.accent, COLORS.warning, COLORS.success] });
+      },
+      closeActions() {
+        return liff.isInClient()
+          ? [{ label: 'ปิดหน้านี้', icon: 'x', style: 'ghost', onClick: () => liff.closeWindow() }]
+          : [];
+      },
+    };
+
+    /* ===================== API ===================== */
+    const Api = {
+      async call(action, payload) {
+        let res;
+        try {
+          res = await fetch(CONFIG.GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoid CORS preflight on Apps Script
+            body: JSON.stringify(Object.assign({ action, idToken: liff.getIDToken() }, payload || {})),
+          });
+        } catch (e) {
+          throw Object.assign(new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'), { code: 'network' });
+        }
+
+        let json;
+        try {
+          json = await res.json();
+        } catch (e) {
+          throw Object.assign(new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ตรวจสอบการ Deploy Apps Script)'), { code: 'bad_response' });
+        }
+
+        if (!json.ok) {
+          if (json.error === 'token_expired') {
+            liff.logout();
+            liff.login({ redirectUri: location.href });
+          }
+          throw Object.assign(new Error(json.message || 'เกิดข้อผิดพลาด'), { code: json.error });
+        }
+        return json.data;
+      },
+    };
+
+    async function getFriendFlag() {
+      try {
+        const f = await liff.getFriendship();
+        return !!f.friendFlag;
+      } catch (e) {
+        return false; // OA not linked to the LINE Login channel
+      }
+    }
+
+    /* ===================== VOTE (customer) ===================== */
+    const Vote = {
+      staffId: null,
+      rating: 0,
+      isFriend: false,
+      data: null,
+
+      async start(staffId) {
+        this.staffId = staffId;
+        UI.loading(true, 'กำลังโหลดข้อมูลพนักงาน...');
+        try {
+          this.isFriend = await getFriendFlag();
+          const d = this.data = await Api.call('init', { staffId, isFriend: this.isFriend });
+          document.title = d.event.eventName;
+
+          if (d.event.eventStatus === 'not_started') {
+            return UI.message({ icon: 'calendar-clock', tone: 'warning', title: 'กิจกรรมยังไม่เริ่ม', text: `เริ่มโหวตได้ ${Util.thaiDate(d.event.eventStart)}`, actions: UI.closeActions() });
+          }
+          if (d.event.eventStatus === 'ended') {
+            return UI.message({ icon: 'calendar-x', tone: 'warning', title: 'กิจกรรมสิ้นสุดแล้ว', text: 'ขอบคุณที่ร่วมสนุกกับเรา ติดตามประกาศผลได้ทาง LINE OA', actions: UI.closeActions() });
+          }
+          if (!d.staff) {
+            return UI.message({ icon: 'user-x', tone: 'danger', title: 'ไม่พบพนักงาน', text: 'QR Code นี้ไม่ถูกต้อง หรือพนักงานไม่ได้เข้าร่วมกิจกรรมแล้ว กรุณาแจ้งพนักงานที่เคาน์เตอร์', actions: UI.closeActions() });
+          }
+          if (d.alreadyVoted) return this.showAlreadyVoted();
+
+          this.render(d);
+        } catch (err) {
+          this.fail(err);
+        } finally {
+          UI.loading(false);
+        }
+      },
+
+      render(d) {
+        const s = d.staff;
+        $('#vote-event-name').text(d.event.eventName);
+        $('#vote-staff-avatar').html(Util.avatar(s.photoUrl, s.nickname || s.name, 'w-24 h-24 text-3xl ring-4 ring-white'));
+        $('#vote-staff-name').text(s.nickname ? `${s.nickname}` : s.name);
+        $('#vote-staff-meta').text([s.nickname ? s.name : '', s.position].filter(Boolean).join(' · '));
+        $('#vote-profile-name').text(d.profile.name || 'ผู้ใช้ LINE');
+        $('#vote-rule').text(d.event.voteMode === 'once'
+          ? '1 บัญชี LINE โหวตได้ 1 ครั้งตลอดกิจกรรม'
+          : '1 บัญชี LINE โหวตได้วันละ 1 ครั้ง');
+
+        $('#star-group').html([1, 2, 3, 4, 5].map(n =>
+          `<button type="button" class="star-btn p-1" data-rating="${n}" aria-label="${n} ดาว"><i data-lucide="star"></i></button>`).join(''));
+
+        this.setRating(0);
+        UI.show('view-vote');
+      },
+
+      setRating(n) {
+        this.rating = n;
+        $('.star-btn').each(function () {
+          $(this).toggleClass('on', Number($(this).data('rating')) <= n);
+        });
+        $('#star-label').text(RATING_LABELS[n] || '');
+        $('#btn-submit-vote').prop('disabled', n < 1);
+      },
+
+      async submit() {
+        if (this.rating < 1) return UI.toast('กรุณาเลือกจำนวนดาว', 'warning');
+        const $btn = $('#btn-submit-vote').prop('disabled', true);
+        UI.loading(true, 'กำลังส่งคะแนน...');
+        try {
+          const r = await Api.call('vote', {
+            staffId: this.staffId,
+            rating: this.rating,
+            comment: $('#vote-comment').val().trim(),
+            consent: $('#vote-consent').is(':checked'),
+            isFriend: this.isFriend,
+          });
+          UI.loading(false);
+          this.showThanks(r);
+          UI.confetti();
+        } catch (err) {
+          UI.loading(false);
+          if (err.code === 'already_voted') return this.showAlreadyVoted();
+          $btn.prop('disabled', false);
+          UI.error(err, 'ส่งคะแนนไม่สำเร็จ');
+        }
+      },
+
+      friendActions(oaBasicId) {
+        if (this.isFriend || !oaBasicId) return [];
+        return [{
+          label: 'เพิ่มเพื่อน LINE OA รับสิทธิพิเศษ', icon: 'user-plus', style: 'line',
+          onClick: () => liff.openWindow({ url: `https://line.me/R/ti/p/${encodeURIComponent(oaBasicId)}`, external: false }),
+        }];
+      },
+
+      showThanks(r) {
+        UI.message({
+          icon: 'heart-handshake', tone: 'success', title: 'ขอบคุณสำหรับคะแนน!',
+          html: `คุณให้ <b class="text-warning">${Util.stars(r.rating)}</b><br>แก่ <b class="text-ink">${Util.esc(r.staffName)}</b>`
+            + `<br><span class="text-sm">${r.voteMode === 'once' ? 'คุณใช้สิทธิ์โหวตครบแล้ว' : 'กลับมาโหวตได้อีกครั้งพรุ่งนี้'}</span>`,
+          actions: this.friendActions(r.oaBasicId).concat(UI.closeActions()),
+        });
+      },
+
+      showAlreadyVoted() {
+        const ev = (this.data && this.data.event) || {};
+        UI.message({
+          icon: 'circle-check', tone: 'primary',
+          title: ev.voteMode === 'once' ? 'คุณใช้สิทธิ์โหวตแล้ว' : 'วันนี้คุณโหวตแล้ว',
+          text: ev.voteMode === 'once'
+            ? 'บัญชี LINE นี้ใช้สิทธิ์โหวตครบแล้ว ขอบคุณที่ร่วมกิจกรรม'
+            : 'บัญชี LINE นี้ให้คะแนนไปแล้วในวันนี้ กลับมาโหวตได้อีกครั้งพรุ่งนี้ ขอบคุณที่ร่วมกิจกรรม',
+          actions: this.friendActions(ev.oaBasicId).concat(UI.closeActions()),
+        });
+      },
+
+      fail(err) {
+        UI.message({
+          icon: 'wifi-off', tone: 'danger', title: 'เปิดหน้าโหวตไม่สำเร็จ', text: err.message,
+          actions: [{ label: 'ลองใหม่', icon: 'refresh-cw', onClick: () => location.reload() }],
+        });
+      },
+    };
+
+    /* ===================== ADMIN ===================== */
+    const Admin = {
+      me: null,
+      staff: [],
+      charts: {},
+      tab: 'dashboard',
+
+      async start() {
+        UI.loading(true, 'กำลังตรวจสอบสิทธิ์...');
+        try {
+          this.me = await Api.call('admin.me');
+          if (!this.me.isAdmin) {
+            $('#gate-name').text(this.me.profile.name || 'LINE');
+            return UI.show('view-gate');
+          }
+          $('#admin-name').text(this.me.profile.name || '');
+          $('#admin-avatar').attr('src', this.me.profile.picture || '');
+          $('#admin-link').val(Util.adminUrl());
+          UI.show('view-admin');
+          await this.switchTab('dashboard');
+        } catch (err) {
+          UI.message({ icon: 'shield-alert', tone: 'danger', title: 'เข้าหน้าแอดมินไม่สำเร็จ', text: err.message,
+            actions: [{ label: 'ลองใหม่', icon: 'refresh-cw', onClick: () => location.reload() }] });
+        } finally {
+          UI.loading(false);
+        }
+      },
+
+      async claim() {
+        const code = $('#gate-code').val().trim();
+        if (!code) return UI.toast('กรุณากรอกรหัสเชิญ', 'warning');
+        UI.loading(true, 'กำลังยืนยัน...');
+        try {
+          await Api.call('admin.claim', { code });
+          UI.loading(false);
+          UI.confetti();
+          await Swal.fire({ icon: 'success', title: 'ลงทะเบียนแอดมินสำเร็จ', confirmButtonColor: COLORS.primary, confirmButtonText: 'เข้าสู่ระบบ' });
+          this.start();
+        } catch (err) {
+          UI.loading(false);
+          UI.error(err, 'ยืนยันไม่สำเร็จ');
+        }
+      },
+
+      async switchTab(tab) {
+        this.tab = tab;
+        $('.tab-btn').removeClass('active').filter(`[data-tab="${tab}"]`).addClass('active');
+        $('.tab-panel').addClass('hidden');
+        $(`#tab-${tab}`).removeClass('hidden');
+        if (tab === 'dashboard') return this.loadDashboard();
+        if (tab === 'staff') return this.loadStaff();
+        if (tab === 'settings') return this.loadSettings();
+      },
+
+      /* ---------- Dashboard ---------- */
+      async loadDashboard() {
+        UI.loading(true, 'กำลังโหลดแดชบอร์ด...');
+        try {
+          const d = await Api.call('admin.dashboard');
+          this.renderDashboard(d);
+        } catch (err) {
+          UI.error(err);
+        } finally {
+          UI.loading(false);
+        }
+      },
+
+      renderDashboard(d) {
+        const ev = d.event;
+        $('#admin-event-name').text(ev.eventName);
+        const statusText = { open: 'เปิดโหวตอยู่', not_started: 'ยังไม่เริ่ม', ended: 'สิ้นสุดแล้ว' }[ev.eventStatus];
+        const statusColor = { open: 'text-success', not_started: 'text-warning', ended: 'text-danger' }[ev.eventStatus];
+        $('#dash-status').html(`<span class="${statusColor} font-semibold">● ${statusText}</span> · ${ev.voteMode === 'once' ? 'โหวตได้ 1 ครั้ง/คน' : 'โหวตได้ 1 ครั้ง/คน/วัน'}`);
+        $('#dash-min-votes').text(d.minVotes ? `ติดอันดับเมื่อได้ ≥ ${d.minVotes} โหวต` : '');
+
+        const t = d.totals;
+        const stats = [
+          { label: 'โหวตทั้งหมด', value: Util.num(t.votes), icon: 'vote', color: 'text-primary' },
+          { label: 'โหวตวันนี้', value: Util.num(t.today), icon: 'calendar-check', color: 'text-success' },
+          { label: 'ดาวเฉลี่ย', value: t.avgRating.toFixed(2), icon: 'star', color: 'text-warning' },
+          { label: 'ลูกค้า (Lead)', value: Util.num(t.customers), sub: `เพื่อน OA ${Util.num(t.friends)} · ยินยอมรับข่าว ${Util.num(t.consent)}`, icon: 'contact', color: 'text-accent' },
+        ];
+        $('#dash-stats').html(stats.map(s => `
+          <div class="bg-white rounded-2xl border border-line p-4">
+            <div class="flex items-center justify-between text-muted text-sm"><span>${s.label}</span><i data-lucide="${s.icon}" class="w-5 h-5 ${s.color}"></i></div>
+            <div class="text-2xl font-bold mt-1">${s.value}</div>
+            ${s.sub ? `<div class="text-xs text-muted mt-1">${s.sub}</div>` : ''}
+          </div>`).join(''));
+
+        const medal = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+        $('#dash-leaderboard').html(d.leaderboard.length ? d.leaderboard.map(s => `
+          <tr class="border-b border-line last:border-0 ${s.ranked ? '' : 'opacity-50'}">
+            <td class="py-2 pr-2 font-bold text-center">${s.rank ? medal(s.rank) : '–'}</td>
+            <td class="py-2 pr-2">
+              <div class="flex items-center gap-2">${Util.avatar(s.photoUrl, s.nickname || s.name, 'w-8 h-8 text-xs')}
+                <div class="min-w-0"><div class="font-semibold truncate">${Util.esc(s.nickname || s.name)}</div>
+                <div class="text-xs text-muted truncate">${Util.esc(s.staffId)}${s.active ? '' : ' · ปิดแล้ว'}</div></div></div>
+            </td>
+            <td class="py-2 pr-2 text-right font-bold">${Util.num(s.votes)}</td>
+            <td class="py-2 pr-2 text-right">${Util.num(s.today)}</td>
+            <td class="py-2 text-right"><span class="text-warning">★</span> ${s.avg.toFixed(2)}</td>
+          </tr>`).join('') : `<tr><td colspan="5" class="py-6 text-center text-muted">ยังไม่มีพนักงาน — เพิ่มได้ที่แท็บพนักงาน</td></tr>`);
+
+        const top = d.leaderboard.filter(s => s.votes > 0).sort((a, b) => b.votes - a.votes).slice(0, 10);
+        this.renderChart('top', {
+          chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: 'Sarabun' },
+          series: [{ name: 'โหวต', data: top.map(s => s.votes) }],
+          xaxis: { categories: top.map(s => s.nickname || s.name) },
+          plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
+          colors: [COLORS.primary], dataLabels: { enabled: true },
+          grid: { borderColor: COLORS.line },
+          noData: { text: 'ยังไม่มีข้อมูลโหวต' },
+        });
+
+        this.renderChart('daily', {
+          chart: { type: 'line', height: 260, toolbar: { show: false }, fontFamily: 'Sarabun', zoom: { enabled: false } },
+          series: [{ name: 'โหวต', data: d.daily.map(x => x.count) }],
+          xaxis: { categories: d.daily.map(x => x.date.slice(5).split('-').reverse().join('/')) },
+          stroke: { width: 3, curve: 'smooth' }, markers: { size: 4 },
+          colors: [COLORS.primary], grid: { borderColor: COLORS.line },
+          yaxis: { min: 0, forceNiceScale: true, labels: { formatter: v => Math.round(v) } },
+          noData: { text: 'ยังไม่มีข้อมูลโหวต' },
+        });
+
+        $('#dash-recent').html(d.recent.length ? d.recent.map(r => `
+          <div class="py-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-semibold">${Util.esc(r.staffName)} <span class="text-warning">${Util.stars(r.rating)}</span></span>
+              <span class="text-muted text-xs">${Util.esc(r.time)}</span>
+            </div>
+            <p class="mt-1">${Util.esc(r.comment)}</p>
+            <p class="text-xs text-muted mt-0.5">โดย ${Util.esc(r.customer)}</p>
+          </div>`).join('') : '<p class="py-4 text-center text-muted">ยังไม่มีความคิดเห็น</p>');
+
+        Util.icons();
+      },
+
+      renderChart(key, options) {
+        if (this.charts[key]) this.charts[key].destroy();
+        this.charts[key] = new ApexCharts(document.querySelector(`#chart-${key}`), options);
+        this.charts[key].render();
+      },
+
+      /* ---------- Staff ---------- */
+      async loadStaff() {
+        UI.loading(true, 'กำลังโหลดรายชื่อพนักงาน...');
+        try {
+          this.staff = await Api.call('admin.staff.list');
+          this.renderStaff();
+        } catch (err) {
+          UI.error(err);
+        } finally {
+          UI.loading(false);
+        }
+      },
+
+      renderStaff() {
+        const q = $('#staff-search').val().trim().toLowerCase();
+        const f = $('#staff-filter').val();
+        const list = this.staff.filter(s => {
+          if (f === 'active' && !s.active) return false;
+          if (f === 'inactive' && s.active) return false;
+          if (!q) return true;
+          return [s.staffId, s.name, s.nickname, s.position].join(' ').toLowerCase().includes(q);
+        });
+
+        $('#staff-count').text(`แสดง ${list.length} จาก ${this.staff.length} คน`);
+        $('#staff-grid').html(list.length ? list.map(s => `
+          <div class="bg-white rounded-2xl border border-line p-4 ${s.active ? '' : 'opacity-60'}">
+            <div class="flex items-center gap-3">
+              ${Util.avatar(s.photoUrl, s.nickname || s.name, 'w-14 h-14 text-xl')}
+              <div class="min-w-0 flex-1">
+                <div class="font-bold truncate">${Util.esc(s.nickname || s.name)}</div>
+                <div class="text-sm text-muted truncate">${Util.esc(s.nickname ? s.name : '')}${s.nickname && s.position ? ' · ' : ''}${Util.esc(s.position)}</div>
+                <div class="text-xs mt-0.5"><span class="font-mono text-muted">${Util.esc(s.staffId)}</span>
+                  <span class="ml-1 px-2 py-0.5 rounded-full ${s.active ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}">${s.active ? 'เข้าร่วม' : 'ปิดแล้ว'}</span></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-4 text-sm">
+              <button data-action="qr" data-id="${Util.esc(s.staffId)}" class="h-9 rounded-lg bg-primary text-white flex items-center justify-center gap-1"><i data-lucide="qr-code" class="w-4 h-4"></i> QR</button>
+              <button data-action="edit-staff" data-id="${Util.esc(s.staffId)}" class="h-9 rounded-lg border border-line flex items-center justify-center gap-1"><i data-lucide="pencil" class="w-4 h-4"></i> แก้ไข</button>
+              <button data-action="toggle-staff" data-id="${Util.esc(s.staffId)}" class="h-9 rounded-lg border border-line flex items-center justify-center gap-1 ${s.active ? 'text-danger' : 'text-success'}">
+                <i data-lucide="${s.active ? 'user-x' : 'user-check'}" class="w-4 h-4"></i> ${s.active ? 'ปิด' : 'เปิด'}</button>
+            </div>
+          </div>`).join('') : `<div class="sm:col-span-2 lg:col-span-3 bg-white rounded-2xl border border-dashed border-line p-10 text-center text-muted">
+            ${this.staff.length ? 'ไม่พบพนักงานที่ค้นหา' : 'ยังไม่มีพนักงาน กด "เพิ่มพนักงาน" เพื่อเริ่มต้น'}</div>`);
+        Util.icons();
+      },
+
+      async editStaff(staffId) {
+        const s = staffId ? this.staff.find(x => x.staffId === staffId) : null;
+        const v = k => Util.esc(s ? s[k] : '');
+        const { value } = await Swal.fire({
+          title: s ? `แก้ไขพนักงาน ${s.staffId}` : 'เพิ่มพนักงาน',
+          html: `
+            <div class="space-y-3">
+              <div><label class="text-sm font-semibold">ชื่อ-นามสกุล *</label><input id="f-name" class="field mt-1" maxlength="80" value="${v('name')}"></div>
+              <div><label class="text-sm font-semibold">ชื่อเล่น</label><input id="f-nickname" class="field mt-1" maxlength="40" value="${v('nickname')}" placeholder="ชื่อที่ลูกค้าเรียก จะแสดงเด่นบนหน้าโหวต"></div>
+              <div><label class="text-sm font-semibold">ตำแหน่ง / แผนก</label><input id="f-position" class="field mt-1" maxlength="60" value="${v('position')}"></div>
+              <div><label class="text-sm font-semibold">ลิงก์รูปภาพ</label><input id="f-photo" class="field mt-1" value="${v('photoUrl')}" placeholder="https://..."></div>
+            </div>`,
+          showCancelButton: true, confirmButtonText: 'บันทึก', cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: COLORS.primary, focusConfirm: false,
+          didOpen: () => document.getElementById('f-name').focus(),
+          preConfirm: () => {
+            const data = {
+              staffId: s ? s.staffId : '',
+              name: $('#f-name').val().trim(),
+              nickname: $('#f-nickname').val().trim(),
+              position: $('#f-position').val().trim(),
+              photoUrl: $('#f-photo').val().trim(),
+            };
+            if (!data.name) return Swal.showValidationMessage('กรุณากรอกชื่อ-นามสกุล');
+            if (data.photoUrl && !/^https:\/\/\S+$/i.test(data.photoUrl)) return Swal.showValidationMessage('ลิงก์รูปภาพต้องขึ้นต้นด้วย https://');
+            return data;
+          },
+        });
+        if (!value) return;
+
+        UI.loading(true, 'กำลังบันทึก...');
+        try {
+          const saved = await Api.call('admin.staff.save', { staff: value });
+          await this.loadStaff();
+          UI.loading(false);
+          if (!s) {
+            UI.confetti();
+            this.showQr(saved.staffId);
+          } else {
+            UI.toast('บันทึกแล้ว');
+          }
+        } catch (err) {
+          UI.loading(false);
+          UI.error(err, 'บันทึกไม่สำเร็จ');
+        }
+      },
+
+      async toggleStaff(staffId) {
+        const s = this.staff.find(x => x.staffId === staffId);
+        if (!s) return;
+        const r = await Swal.fire({
+          icon: 'question',
+          title: `${s.active ? 'ปิด' : 'เปิด'}การโหวตของ ${Util.esc(s.nickname || s.name)}?`,
+          text: s.active ? 'QR ของพนักงานคนนี้จะใช้โหวตไม่ได้ (คะแนนเดิมยังอยู่)' : 'QR เดิมจะกลับมาใช้โหวตได้',
+          showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: s.active ? '#DC2626' : COLORS.success,
+        });
+        if (!r.isConfirmed) return;
+        UI.loading(true, 'กำลังบันทึก...');
+        try {
+          await Api.call('admin.staff.toggle', { staffId });
+          await this.loadStaff();
+          UI.toast('อัปเดตแล้ว');
+        } catch (err) {
+          UI.error(err);
+        } finally {
+          UI.loading(false);
+        }
+      },
+
+      /* ---------- QR card ---------- */
+      fitText(ctx, text, maxWidth, startSize, minSize, weight) {
+        let size = startSize;
+        do {
+          ctx.font = `${weight} ${size}px Sarabun`;
+          if (ctx.measureText(text).width <= maxWidth) break;
+          size -= 2;
+        } while (size > minSize);
+        return size;
+      },
+
+      async buildQrCard(staff, eventName) {
+        const holder = document.createElement('div');
+        new QRCode(holder, {
+          text: Util.voteUrl(staff.staffId), width: 560, height: 560,
+          colorDark: COLORS.navy, colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M,
+        });
+        const qrCanvas = holder.querySelector('canvas');
+
+        try {
+          await Promise.all([document.fonts.load('700 48px Sarabun'), document.fonts.load('400 28px Sarabun')]);
+        } catch (e) { /* fallback font */ }
+
+        const W = 800, H = 1120;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = COLORS.navy; ctx.fillRect(0, 0, W, 180);
+
+        ctx.fillStyle = '#FFFFFF';
+        this.fitText(ctx, eventName, W - 80, 40, 22, 700);
+        ctx.fillText(eventName, W / 2, 72);
+        ctx.fillStyle = '#A8C4E8'; ctx.font = '400 28px Sarabun';
+        ctx.fillText('สแกนเพื่อให้คะแนนการบริการ', W / 2, 128);
+
+        const title = staff.nickname || staff.name;
+        ctx.fillStyle = '#1E2A3A';
+        this.fitText(ctx, title, W - 80, 60, 30, 700);
+        ctx.fillText(title, W / 2, 250);
+
+        const sub = [staff.nickname ? staff.name : '', staff.position].filter(Boolean).join(' · ');
+        if (sub) {
+          ctx.fillStyle = COLORS.muted;
+          this.fitText(ctx, sub, W - 80, 30, 18, 400);
+          ctx.fillText(sub, W / 2, 310);
+        }
+
+        ctx.strokeStyle = COLORS.line; ctx.lineWidth = 4;
+        ctx.strokeRect(108, 348, 584, 584);
+        if (qrCanvas) ctx.drawImage(qrCanvas, 120, 360, 560, 560);
+
+        ctx.fillStyle = COLORS.primary; ctx.font = '700 30px Sarabun';
+        ctx.fillText('เปิดกล้องหรือแอป LINE แล้วสแกน', W / 2, 990);
+        ctx.fillStyle = COLORS.muted; ctx.font = '400 24px Sarabun';
+        ctx.fillText(`รหัสพนักงาน ${staff.staffId}`, W / 2, 1050);
+
+        return c.toDataURL('image/png');
+      },
+
+      async showQr(staffId) {
+        const s = this.staff.find(x => x.staffId === staffId);
+        if (!s) return;
+        const eventName = $('#admin-event-name').text() || 'โหวตพนักงานบริการประทับใจ';
+        const dataUrl = await this.buildQrCard(s, eventName);
+        const fileName = `QR_${s.staffId}_${(s.nickname || s.name).replace(/[\\/:*?"<>|\s]+/g, '_')}.png`;
+
+        const r = await Swal.fire({
+          title: `QR ของ ${Util.esc(s.nickname || s.name)}`,
+          html: `<img src="${dataUrl}" class="w-full rounded-xl border border-line" alt="QR">
+                 <p class="text-xs text-muted mt-2 text-center">ถ้ากดดาวน์โหลดไม่ได้ (ในแอป LINE) ให้กดค้างที่รูปแล้วเลือกบันทึก</p>`,
+          showDenyButton: true, showCancelButton: true,
+          confirmButtonText: 'ดาวน์โหลด PNG', denyButtonText: 'คัดลอกลิงก์', cancelButtonText: 'ปิด',
+          confirmButtonColor: COLORS.primary, denyButtonColor: COLORS.navy,
+        });
+        if (r.isConfirmed) {
+          const a = document.createElement('a');
+          a.href = dataUrl; a.download = fileName;
+          document.body.appendChild(a); a.click(); a.remove();
+        } else if (r.isDenied) {
+          Util.copy(Util.voteUrl(s.staffId));
+        }
+      },
+
+      /* ---------- Settings ---------- */
+      async loadSettings() {
+        UI.loading(true, 'กำลังโหลดการตั้งค่า...');
+        try {
+          const cfg = await Api.call('admin.config.get');
+          const f = document.getElementById('settings-form');
+          const v = cfg.values;
+          f.EVENT_NAME.value = v.EVENT_NAME || '';
+          f.VOTE_MODE.value = v.VOTE_MODE === 'once' ? 'once' : 'daily';
+          f.EVENT_START.value = Util.toInputDate(v.EVENT_START);
+          f.EVENT_END.value = Util.toInputDate(v.EVENT_END);
+          f.MIN_VOTES_TO_RANK.value = v.MIN_VOTES_TO_RANK || '0';
+          f.OA_BASIC_ID.value = v.OA_BASIC_ID || '';
+          $('#invite-code').val(cfg.inviteCode || '');
+        } catch (err) {
+          UI.error(err);
+        } finally {
+          UI.loading(false);
+        }
+      },
+
+      async saveSettings() {
+        const f = document.getElementById('settings-form');
+        const config = {
+          EVENT_NAME: f.EVENT_NAME.value.trim(),
+          VOTE_MODE: f.VOTE_MODE.value,
+          EVENT_START: f.EVENT_START.value.replace('T', ' '),
+          EVENT_END: f.EVENT_END.value.replace('T', ' '),
+          MIN_VOTES_TO_RANK: f.MIN_VOTES_TO_RANK.value,
+          OA_BASIC_ID: f.OA_BASIC_ID.value.trim(),
+        };
+        if (!config.EVENT_NAME) return UI.toast('กรุณากรอกชื่อกิจกรรม', 'warning');
+        if (config.EVENT_START && config.EVENT_END && config.EVENT_END <= config.EVENT_START) {
+          return UI.toast('วันสิ้นสุดต้องอยู่หลังวันเริ่ม', 'warning');
+        }
+        UI.loading(true, 'กำลังบันทึก...');
+        try {
+          const cfg = await Api.call('admin.config.save', { config });
+          f.OA_BASIC_ID.value = cfg.values.OA_BASIC_ID || '';
+          $('#admin-event-name').text(cfg.values.EVENT_NAME);
+          UI.toast('บันทึกการตั้งค่าแล้ว');
+        } catch (err) {
+          UI.error(err, 'บันทึกไม่สำเร็จ');
+        } finally {
+          UI.loading(false);
+        }
+      },
+    };
+
+    /* ===================== EVENTS ===================== */
+    $(document)
+      .on('click', '.star-btn', function () { Vote.setRating(Number($(this).data('rating'))); })
+      .on('input', '#vote-comment', function () { $('#comment-count').text(this.value.length); })
+      .on('click', '#btn-submit-vote', () => Vote.submit())
+      .on('click', '#btn-gate', () => Admin.claim())
+      .on('keydown', '#gate-code', e => { if (e.key === 'Enter') Admin.claim(); })
+      .on('click', '.tab-btn', function () { Admin.switchTab($(this).data('tab')); })
+      .on('click', '[data-action="refresh-dashboard"]', () => Admin.loadDashboard())
+      .on('click', '[data-action="add-staff"]', () => Admin.editStaff(null))
+      .on('click', '[data-action="edit-staff"]', function () { Admin.editStaff(String($(this).data('id'))); })
+      .on('click', '[data-action="toggle-staff"]', function () { Admin.toggleStaff(String($(this).data('id'))); })
+      .on('click', '[data-action="qr"]', function () { Admin.showQr(String($(this).data('id'))); })
+      .on('click', '[data-action="copy"]', function () { Util.copy($($(this).data('target')).val()); })
+      .on('input', '#staff-search', () => Admin.renderStaff())
+      .on('change', '#staff-filter', () => Admin.renderStaff())
+      .on('submit', '#settings-form', e => { e.preventDefault(); Admin.saveSettings(); });
+
+    /* ===================== BOOT ===================== */
+    async function boot() {
+      Util.icons();
+
+      if (CONFIG.LIFF_ID.indexOf('YOUR_') === 0 || CONFIG.GAS_URL.indexOf('YOUR_') > -1) {
+        return UI.message({ icon: 'settings', tone: 'warning', title: 'ยังไม่ได้ตั้งค่าระบบ', text: 'กรุณาใส่ LIFF_ID และ GAS_URL ใน index.html แล้ว deploy ใหม่' });
+      }
+
+      try {
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+      } catch (err) {
+        return UI.message({ icon: 'alert-triangle', tone: 'danger', title: 'เปิด LINE LIFF ไม่สำเร็จ', text: err.message || 'ตรวจสอบ LIFF ID และ Endpoint URL' });
+      }
+
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: location.href });
+        return;
+      }
+
+      const params = new URLSearchParams(location.search);
+      if (params.get('page') === 'admin') return Admin.start();
+
+      const staffId = (params.get('staff') || '').trim().toUpperCase();
+      if (!staffId) {
+        return UI.message({
+          icon: 'scan-line', title: 'สแกน QR Code ของพนักงาน',
+          text: 'กรุณาสแกน QR Code ที่เคาน์เตอร์ เพื่อให้คะแนนพนักงานที่ให้บริการคุณ',
+          actions: UI.closeActions(),
+        });
+      }
+      return Vote.start(staffId);
+    }
+
+    document.addEventListener('DOMContentLoaded', boot);
+  </script>
+</body>
+</html>
